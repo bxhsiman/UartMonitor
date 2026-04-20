@@ -7,17 +7,19 @@
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/usb_serial_jtag.h"
+#include "soc/gpio_num.h"
 #include "sys/time.h"
 
 // UART1配置宏定义（可根据需要修改GPIO）
-#define UART1_TXD_PIN       (GPIO_NUM_2)   // 可修改
-#define UART1_RXD_PIN       (GPIO_NUM_6)   // 可修改
+#define UART1_TXD_PIN       (GPIO_NUM_9)   // 可修改
+#define UART1_RXD_PIN       (GPIO_NUM_8)   // 可修改
 #define UART1_RTS_PIN       (UART_PIN_NO_CHANGE)
 #define UART1_CTS_PIN       (UART_PIN_NO_CHANGE)
 #define UART1_BAUD_RATE     (115200)
@@ -295,8 +297,30 @@ void app_main(void)
     ESP_LOGI(TAG, "════════════════════════════════════════════════");
     ESP_LOGI(TAG, "");
 
+    // 拉高GPIO7
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = (1ULL << 7),
+        .pull_down_en = 0,
+        .pull_up_en = 0
+    };
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    gpio_config(&io_conf);
+    gpio_set_level(GPIO_NUM_7, 0);  // 失效 
+    vTaskDelay(pdMS_TO_TICKS(800));
+
+    gpio_set_level(GPIO_NUM_7, 1); // 发送开机脉冲
+    vTaskDelay(pdMS_TO_TICKS(800));
+    gpio_set_level(GPIO_NUM_7,0);
+
+    // gpio_set_level(GPIO_NUM_7, 1);
+
     // 等待一下让日志显示完整
     vTaskDelay(pdMS_TO_TICKS(100));
     printf(">> ");
     fflush(stdout);
+    while(1) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
